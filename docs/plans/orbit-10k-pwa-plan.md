@@ -1,9 +1,11 @@
 # Orbit Implementation Plan
 
 ## 1. 목표
+
 `docs/specs/orbit-10k-pwa-spec.md`에 정의된 MVP를 React + TypeScript + Vite 기반 PWA로 구현한다.
 
 ## 2. 작업 원칙
+
 - Spec 범위를 넘는 기능 추가를 하지 않는다.
 - 패키지 설치/실행/스크립트는 pnpm 기준으로 통일한다.
 - 전역 상태는 Zustand store를 단일 소스로 사용한다.
@@ -13,6 +15,7 @@
 ## 3. 구현 단계
 
 ### Phase 0. 프로젝트 초기화
+
 1. pnpm 기반 Vite React TypeScript 프로젝트 생성
 2. 필수 의존성 설치 (pnpm)
    - `react-router-dom`, `zustand`, `dayjs`, `lucide-react`
@@ -30,6 +33,7 @@
    - 스크립트 실행(`pnpm lint`, `pnpm format`, `pnpm build`) 기준 확인
 
 ### Phase 1. 기본 구조 및 데이터 레이어
+
 1. `src` 디렉토리 구조를 spec 기준으로 생성
 2. `constants/planData.ts`에 5주 훈련 데이터 정의
 3. `utils`에 날짜 포맷/비교 helper 구성 (`YYYY-MM-DD` 기준)
@@ -39,6 +43,7 @@
    - localStorage persist 설정
 
 ### Phase 2. 공통 레이아웃 및 라우팅
+
 1. `App.tsx`에 라우팅/레이아웃 골격 구성
 2. `Splash.tsx`, `Home.tsx`, `Plan.tsx` 라우트 연결
 3. `components/layout/Header.tsx` 구현
@@ -49,6 +54,7 @@
    - 활성 탭 스타일링
 
 ### Phase 3. Home 화면 구현
+
 1. `components/3d/OrbitScene.tsx` 구현
    - Base Track + Progress Track + Bloom
    - OrbitControls 제한(zoom/pan 비활성, drag 회전만 허용)
@@ -60,6 +66,7 @@
    - 상태/데이터 매핑
 
 ### Phase 4. Plan 화면 및 BottomSheet 구현
+
 1. `Plan.tsx` 상단 영역 구현
    - 타이틀, 범례, 달성률
 2. 월간/주간 토글 캘린더 구현
@@ -75,11 +82,13 @@
    - 오버레이는 탭/클릭으로 닫기
 
 ### Phase 5. 정책/예외 처리
+
 1. 미래 날짜 완료 비활성화 및 안내 문구 처리
 2. 과거 미완료 기록 정책 반영
 3. viewport 핀치줌 방지 설정 반영
 
 ### Phase 6. 검증 및 마감
+
 1. 타입체크/린트/포맷/빌드 검증
 2. 주요 플로우 수동 검증
    - Home/Plan 이동
@@ -90,6 +99,7 @@
 4. 남은 이슈 정리 및 수정
 
 ## 4. 파일 단위 작업 우선순위
+
 1. `main.tsx`, `App.tsx`
 2. `store/useOrbitStore.ts`, `constants/planData.ts`, `utils/*`
 3. `components/layout/*`, `components/ui/*`
@@ -97,6 +107,7 @@
 5. `pages/Home.tsx`, `pages/Plan.tsx`, `pages/Splash.tsx`
 
 ## 5. 리스크와 대응
+
 - 3D + 모바일 성능 저하 가능성
   - 대응: 재렌더링 최소화, 불필요한 애니메이션 재생 방지
 - 날짜 경계값 처리 오류 가능성
@@ -105,6 +116,7 @@
   - 대응: store selector 기반으로 화면 표시 통일
 
 ## 6. 완료 정의
+
 - Spec의 완료 기준(기능/상태/인터랙션/PWA)을 모두 충족한다.
 - 모바일 브라우저 기준 주요 사용자 플로우가 끊김 없이 동작한다.
 - 구현 범위가 Spec MVP를 초과하지 않는다.
