@@ -11,6 +11,7 @@
 - 전역 상태는 Zustand store를 단일 소스로 사용한다.
 - UI, 상태, 3D 렌더링, 날짜 계산 로직을 분리한다.
 - 모바일 환경 중심으로 인터랙션을 검증한다.
+- UI를 작은 단위로 먼저 만들고, 기능 연결은 더미 계약으로 시작한 뒤 실제 로직으로 치환한다.
 
 ## 3. 구현 단계
 
@@ -32,62 +33,51 @@
    - `pnpm-lock.yaml` 생성 확인
    - 스크립트 실행(`pnpm lint`, `pnpm format`, `pnpm build`) 기준 확인
 
-### Phase 1. 기본 구조 및 데이터 레이어
+### Phase 1. UI 스캐폴드 및 컴포넌트 계약 고정 (선행)
 
 1. `src` 디렉토리 구조를 spec 기준으로 생성
-2. `constants/planData.ts`에 5주 훈련 데이터 정의
-3. `utils`에 날짜 포맷/비교 helper 구성 (`YYYY-MM-DD` 기준)
-4. `store/useOrbitStore.ts` 구현
+2. 공통 레이아웃 스캐폴드 구현
+   - `components/layout/Header.tsx`
+   - `components/layout/BottomNav.tsx`
+3. 페이지 골격 구현
+   - `pages/Splash.tsx`, `pages/Home.tsx`, `pages/Plan.tsx`
+   - 라우트 연결만 우선 적용
+4. UI 컴포넌트 더미 구현
+   - `components/ui/BottomSheet.tsx`, 오버레이, 범례 등
+   - 실제 상태 연결 없이 local state/dummy props로 동작 확인
+5. 3D 컴포넌트 스캐폴드 구현
+   - `components/3d/OrbitScene.tsx` 기본 렌더/제어만 연결
+6. 컴포넌트 계약(Type/Props) 고정
+   - 오늘 훈련 카드, 캘린더 셀, 바텀시트 데이터 shape를 타입으로 선언
+   - 이후 상태/유틸 레이어가 이 계약을 따르도록 기준화
+
+### Phase 2. 데이터 및 상태 레이어 구현
+
+1. `constants/planData.ts`에 5주 훈련 데이터 정의
+2. `utils`에 날짜 포맷/비교 helper 구성 (`YYYY-MM-DD` 기준)
+3. `store/useOrbitStore.ts` 구현
    - `user`, `records`, `progressCount`
    - `toggleRecord`, `setUserName`, `recalculateProgress`
    - localStorage persist 설정
+4. Phase 1의 더미 데이터/핸들러를 실제 store + helper 기반으로 치환
 
-### Phase 2. 공통 레이아웃 및 라우팅
+### Phase 3. 핵심 인터랙션 및 정책 연결
 
-1. `App.tsx`에 라우팅/레이아웃 골격 구성
-2. `Splash.tsx`, `Home.tsx`, `Plan.tsx` 라우트 연결
-3. `components/layout/Header.tsx` 구현
-   - 페이지 타이틀 표시
-   - Avatar 클릭 시 이름 변경 모달 연결
-4. `components/layout/BottomNav.tsx` 구현
-   - Home/Plan 탭 이동
-   - 활성 탭 스타일링
-
-### Phase 3. Home 화면 구현
-
-1. `components/3d/OrbitScene.tsx` 구현
-   - Base Track + Progress Track + Bloom
-   - OrbitControls 제한(zoom/pan 비활성, drag 회전만 허용)
-2. 진행률 변화 애니메이션 구현
-   - 완료/취소에 따라 부드러운 증가/감소 전환
-3. `Home.tsx` 구현
-   - 오늘의 훈련 카드
-   - 다가오는 3일 리스트
-   - 상태/데이터 매핑
-
-### Phase 4. Plan 화면 및 BottomSheet 구현
-
-1. `Plan.tsx` 상단 영역 구현
-   - 타이틀, 범례, 달성률
-2. 월간/주간 토글 캘린더 구현
-   - 일요일 시작
+1. Home 진행률 반영 및 3D 애니메이션 연결
+   - 완료/취소에 따른 부드러운 증가/감소 전환
+2. Plan 캘린더 상태 반영
    - 오늘 하이라이트
    - 과거 미완료 Skip/딤 처리
-3. `components/ui/BottomSheet.tsx` 구현
-   - 날짜/타입/요약/상세/메모 노출
-   - 닫기 버튼 + 스와이프 다운 닫기
-4. 완료 버튼 인터랙션 구현
+3. BottomSheet 완료/취소 흐름 연결
    - 오버레이 + 격려 메시지 + Home 동일 3D 애니메이션
-   - 완료/취소 모두 부드러운 증가/감소 전환
-   - 오버레이는 탭/클릭으로 닫기
+   - 오버레이 탭/클릭 닫기
+   - 바텀시트 스와이프 다운/닫기 버튼 닫기
+4. 정책/예외 처리 반영
+   - 미래 날짜 완료 비활성화 및 안내 문구
+   - 과거 미완료 기록 정책 반영
+   - viewport 핀치줌 방지 설정 반영
 
-### Phase 5. 정책/예외 처리
-
-1. 미래 날짜 완료 비활성화 및 안내 문구 처리
-2. 과거 미완료 기록 정책 반영
-3. viewport 핀치줌 방지 설정 반영
-
-### Phase 6. 검증 및 마감
+### Phase 4. 통합 검증 및 마감
 
 1. 타입체크/린트/포맷/빌드 검증
 2. 주요 플로우 수동 검증
@@ -101,13 +91,13 @@
 ## 4. 파일 단위 작업 우선순위
 
 1. `main.tsx`, `App.tsx`
-2. `store/useOrbitStore.ts`, `constants/planData.ts`, `utils/*`
-3. `components/layout/*`, `components/ui/*`
-4. `components/3d/*`
-5. `pages/Home.tsx`, `pages/Plan.tsx`, `pages/Splash.tsx`
+2. `pages/*`, `components/layout/*`, `components/ui/*`, `components/3d/*` (UI 선행)
+3. `constants/planData.ts`, `utils/*`, `store/useOrbitStore.ts` (로직 치환)
 
 ## 5. 리스크와 대응
 
+- UI 더미와 실제 로직 연결 시 계약 불일치 가능성
+  - 대응: Phase 1에서 Props/Type 계약을 먼저 고정하고, Phase 2는 계약을 따르는 방향으로만 구현
 - 3D + 모바일 성능 저하 가능성
   - 대응: 재렌더링 최소화, 불필요한 애니메이션 재생 방지
 - 날짜 경계값 처리 오류 가능성
