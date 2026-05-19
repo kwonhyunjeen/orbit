@@ -2,7 +2,25 @@ import { useMemo, useState } from 'react';
 
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { Overlay } from '../components/ui/Overlay';
-import type { BottomSheetViewModel, CalendarCellViewModel, OverlayViewModel, TrainingLabelItem } from '../types/ui';
+import { planData } from '../constants/planData';
+import type { BottomSheetViewModel, OverlayViewModel, TrainingLabelItem } from '../types/ui';
+
+type TrainingType = keyof typeof typeColorClassByTraining;
+
+type CalendarItem = {
+  dateKey: string;
+  month: number;
+  dayOfMonth: number;
+  dayLabel: string;
+  type: TrainingType;
+  label: string;
+  rowSummary: string;
+};
+
+type WeeklyPreviewWeek = {
+  weekNumber: number;
+  items: CalendarItem[];
+};
 
 const trainingLabelItems: TrainingLabelItem[] = [
   { label: 'Easy', colorClass: 'bg-emerald-500' },
@@ -12,30 +30,68 @@ const trainingLabelItems: TrainingLabelItem[] = [
   { label: 'Rest', colorClass: 'bg-slate-500' },
 ];
 
+const typeColorClassByTraining = {
+  rest: 'bg-slate-500',
+  easy: 'bg-emerald-500',
+  long: 'bg-sky-500',
+  tempo: 'bg-amber-500',
+  interval: 'bg-violet-500',
+  strength: 'bg-rose-500',
+  race: 'bg-cyan-400',
+} as const;
+
 const calendarDays = ['일', '월', '화', '수', '목', '금', '토'];
 
-const calendarCells: CalendarCellViewModel[] = Array.from({ length: 35 }, (_, index) => {
+const calendarItems: CalendarItem[] = Object.entries(planData).map(([dateKey, value]) => {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const month = date.getMonth() + 1;
+  const dayOfMonth = date.getDate();
+  const dayLabel = calendarDays[date.getDay()] ?? '일';
+
   return {
-    key: `cell-${index + 1}`,
-    label: index + 1,
+    dateKey,
+    month,
+    dayOfMonth,
+    dayLabel,
+    type: value.type,
+    label: value.label,
+    rowSummary: value.rowSummary,
+  };
+});
+
+const weeklyPreviewWeeks: WeeklyPreviewWeek[] = Array.from({ length: 5 }, (_, index) => {
+  const weekNumber = index + 1;
+
+  return {
+    weekNumber,
+    items: calendarItems.slice(index * 7, index * 7 + 7),
   };
 });
 
 export function PlanPage() {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [overlayMessage, setOverlayMessage] = useState('');
   const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+  const [selectedWeek, setSelectedWeek] = useState(1);
+
+  const selectedItem = useMemo(() => {
+    if (selectedDateKey === null) {
+      return null;
+    }
+
+    return calendarItems.find((item) => item.dateKey === selectedDateKey) ?? null;
+  }, [selectedDateKey]);
 
   const bottomSheetModel: BottomSheetViewModel = useMemo(() => {
-    if (selectedDay === null) {
+    if (selectedItem === null) {
       return { open: false, title: '' };
     }
 
     return {
       open: true,
-      title: `${selectedDay}일 훈련 상세`,
+      title: `${selectedItem.month}/${selectedItem.dayOfMonth} 훈련 상세`,
     };
-  }, [selectedDay]);
+  }, [selectedItem]);
 
   const overlayModel: OverlayViewModel = useMemo(() => {
     return {
@@ -44,16 +100,10 @@ export function PlanPage() {
     };
   }, [overlayMessage]);
 
-  const visibleCalendarCells = useMemo(() => {
-    if (calendarView === 'week') {
-      return calendarCells.slice(0, 7);
-    }
-
-    return calendarCells;
-  }, [calendarView]);
+  const activeWeekItems = weeklyPreviewWeeks.find((week) => week.weekNumber === selectedWeek)?.items ?? [];
 
   const handleCloseBottomSheet = () => {
-    setSelectedDay(null);
+    setSelectedDateKey(null);
   };
 
   const handleCloseOverlay = () => {
@@ -66,6 +116,14 @@ export function PlanPage() {
 
   const handleCancelDummy = () => {
     setOverlayMessage('오늘은 쉬어가도 괜찮아요. 더미 오버레이 메시지입니다.');
+  };
+
+  const handlePrevWeek = () => {
+    setSelectedWeek((prevWeek) => (prevWeek === 1 ? 5 : prevWeek - 1));
+  };
+
+  const handleNextWeek = () => {
+    setSelectedWeek((prevWeek) => (prevWeek === 5 ? 1 : prevWeek + 1));
   };
 
   return (
@@ -120,29 +178,90 @@ export function PlanPage() {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-2">
-            {calendarDays.map((day) => {
-              return (
-                <div key={day} className="text-center text-xs text-slate-400">
-                  {day}
-                </div>
-              );
-            })}
+          {calendarView === 'month' ? (
+            <>
+              <div className="mt-3 grid grid-cols-7 gap-2">
+                {calendarDays.map((day) => {
+                  return (
+                    <div key={day} className="text-center text-xs text-slate-400">
+                      {day}
+                    </div>
+                  );
+                })}
+              </div>
 
-            {visibleCalendarCells.map((cell) => {
-              return (
+              <div className="mt-2 grid grid-cols-7 gap-2">
+                {calendarItems.map((item) => {
+                  return (
+                    <button
+                      key={item.dateKey}
+                      type="button"
+                      className="relative aspect-square border border-slate-700 p-1 text-left text-xs text-slate-300"
+                      aria-label={`${item.month}월 ${item.dayOfMonth}일`}
+                      onClick={() => setSelectedDateKey(item.dateKey)}
+                    >
+                      <span>{item.dayOfMonth}</span>
+                      <span
+                        className={`absolute right-1 bottom-1 size-1.5 rounded-full ${typeColorClassByTraining[item.type]}`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="mt-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <button
-                  key={cell.key}
                   type="button"
-                  className="h-10 border border-slate-700 text-xs text-slate-300"
-                  aria-label={`${cell.label}일`}
-                  onClick={() => setSelectedDay(cell.label)}
+                  onClick={handlePrevWeek}
+                  className="rounded-sm border border-slate-700 px-2 py-1 text-xs text-slate-300"
+                  aria-label="이전 주차"
                 >
-                  {cell.label}
+                  {'<'}
                 </button>
-              );
-            })}
-          </div>
+                <p className="text-xs text-slate-200">{selectedWeek}주차</p>
+                <button
+                  type="button"
+                  onClick={handleNextWeek}
+                  className="rounded-sm border border-slate-700 px-2 py-1 text-xs text-slate-300"
+                  aria-label="다음 주차"
+                >
+                  {'>'}
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {activeWeekItems.map((item) => {
+                  return (
+                    <button
+                      key={item.dateKey}
+                      type="button"
+                      className="w-full border border-slate-700 px-3 py-2 text-left"
+                      aria-label={`${item.month}/${item.dayOfMonth} ${item.label}`}
+                      onClick={() => setSelectedDateKey(item.dateKey)}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 border border-slate-700 px-2 py-1 text-center">
+                            <p className="text-[10px] text-slate-400">{item.dayLabel}</p>
+                            <p className="text-xs text-slate-200">
+                              {item.month}/{item.dayOfMonth}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-100">{item.label}</p>
+                            <p className="mt-1 text-[11px] text-slate-400">{item.rowSummary}</p>
+                          </div>
+                        </div>
+                        <span className={`size-2 rounded-full ${typeColorClassByTraining[item.type]}`} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="mt-4 border border-slate-700 p-4">
