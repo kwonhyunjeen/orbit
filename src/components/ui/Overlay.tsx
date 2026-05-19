@@ -1,6 +1,6 @@
-type OverlayProps = {
-  open: boolean;
-  message: string;
+import type { OverlayViewModel } from '../../types/ui';
+
+type OverlayProps = OverlayViewModel & {
   onClose: () => void;
 };
 

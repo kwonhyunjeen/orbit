@@ -1,10 +1,9 @@
+import { OrbitScene } from '../components/3d/OrbitScene';
+
 export function HomePage() {
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-4 pb-24">
-      <section className="border border-slate-700 p-4">
-        <h2 className="text-sm text-slate-200">3D Orbit</h2>
-        <div className="mt-3 h-56 border border-slate-700" />
-      </section>
+      <OrbitScene />
 
       <section className="mt-4 border border-slate-700 p-4">
         <h3 className="text-sm text-slate-200">오늘의 훈련</h3>

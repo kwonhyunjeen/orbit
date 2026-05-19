@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { Overlay } from '../components/ui/Overlay';
+import type { BottomSheetViewModel, CalendarCellViewModel, OverlayViewModel, TrainingLabelItem } from '../types/ui';
 
-const legendItems = [
+const trainingLabelItems: TrainingLabelItem[] = [
   { label: 'Easy', colorClass: 'bg-emerald-500' },
   { label: 'Long', colorClass: 'bg-sky-500' },
   { label: 'Tempo', colorClass: 'bg-amber-500' },
@@ -13,7 +14,7 @@ const legendItems = [
 
 const calendarDays = ['일', '월', '화', '수', '목', '금', '토'];
 
-const calendarCells = Array.from({ length: 35 }, (_, index) => {
+const calendarCells: CalendarCellViewModel[] = Array.from({ length: 35 }, (_, index) => {
   return {
     key: `cell-${index + 1}`,
     label: index + 1,
@@ -23,17 +24,33 @@ const calendarCells = Array.from({ length: 35 }, (_, index) => {
 export function PlanPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [overlayMessage, setOverlayMessage] = useState('');
+  const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
 
-  const isBottomSheetOpen = selectedDay !== null;
-  const isOverlayOpen = overlayMessage.length > 0;
-
-  const bottomSheetTitle = useMemo(() => {
+  const bottomSheetModel: BottomSheetViewModel = useMemo(() => {
     if (selectedDay === null) {
-      return '';
+      return { open: false, title: '' };
     }
 
-    return `${selectedDay}일 훈련 상세`;
+    return {
+      open: true,
+      title: `${selectedDay}일 훈련 상세`,
+    };
   }, [selectedDay]);
+
+  const overlayModel: OverlayViewModel = useMemo(() => {
+    return {
+      open: overlayMessage.length > 0,
+      message: overlayMessage,
+    };
+  }, [overlayMessage]);
+
+  const visibleCalendarCells = useMemo(() => {
+    if (calendarView === 'week') {
+      return calendarCells.slice(0, 7);
+    }
+
+    return calendarCells;
+  }, [calendarView]);
 
   const handleCloseBottomSheet = () => {
     setSelectedDay(null);
@@ -58,7 +75,7 @@ export function PlanPage() {
           <h2 className="text-base text-slate-100">Run 10K Planning</h2>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            {legendItems.map((item) => {
+            {trainingLabelItems.map((item) => {
               return (
                 <div key={item.label} className="flex items-center gap-2">
                   <span className={`size-2 rounded-full ${item.colorClass}`} />
@@ -75,7 +92,33 @@ export function PlanPage() {
         </section>
 
         <section className="mt-4 border border-slate-700 p-4">
-          <h3 className="text-sm text-slate-200">캘린더</h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm text-slate-200">캘린더</h3>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCalendarView('month')}
+                className={
+                  calendarView === 'month'
+                    ? 'rounded-sm border border-slate-500 px-2 py-1 text-xs text-slate-100'
+                    : 'rounded-sm border border-slate-700 px-2 py-1 text-xs text-slate-300'
+                }
+              >
+                월간
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarView('week')}
+                className={
+                  calendarView === 'week'
+                    ? 'rounded-sm border border-slate-500 px-2 py-1 text-xs text-slate-100'
+                    : 'rounded-sm border border-slate-700 px-2 py-1 text-xs text-slate-300'
+                }
+              >
+                주간
+              </button>
+            </div>
+          </div>
 
           <div className="mt-3 grid grid-cols-7 gap-2">
             {calendarDays.map((day) => {
@@ -86,7 +129,7 @@ export function PlanPage() {
               );
             })}
 
-            {calendarCells.map((cell) => {
+            {visibleCalendarCells.map((cell) => {
               return (
                 <button
                   key={cell.key}
@@ -108,7 +151,7 @@ export function PlanPage() {
         </section>
       </main>
 
-      <BottomSheet open={isBottomSheetOpen} title={bottomSheetTitle} onClose={handleCloseBottomSheet}>
+      <BottomSheet open={bottomSheetModel.open} title={bottomSheetModel.title} onClose={handleCloseBottomSheet}>
         <p className="text-xs text-slate-300">훈련 상세 더미 데이터 영역</p>
         <div className="mt-3 flex items-center gap-2">
           <button
@@ -128,7 +171,7 @@ export function PlanPage() {
         </div>
       </BottomSheet>
 
-      <Overlay open={isOverlayOpen} message={overlayMessage} onClose={handleCloseOverlay} />
+      <Overlay open={overlayModel.open} message={overlayModel.message} onClose={handleCloseOverlay} />
     </>
   );
 }

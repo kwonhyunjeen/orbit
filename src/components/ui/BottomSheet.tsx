@@ -2,9 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { ReactNode, TouchEvent } from 'react';
 import { useEffect, useRef } from 'react';
 
-type BottomSheetProps = {
-  open: boolean;
-  title: string;
+import type { BottomSheetViewModel } from '../../types/ui';
+
+type BottomSheetProps = BottomSheetViewModel & {
   onClose: () => void;
   children: ReactNode;
 };
