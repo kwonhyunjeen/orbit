@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 
+import type { MainTab } from '../../types/ui';
+
 type BottomNavProps = {
-  activeTab: 'home' | 'plan';
+  activeTab: MainTab;
 };
 
 export function BottomNav({ activeTab }: BottomNavProps) {

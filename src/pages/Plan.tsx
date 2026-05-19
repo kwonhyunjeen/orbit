@@ -3,24 +3,14 @@ import { useMemo, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { Overlay } from '../components/ui/Overlay';
 import { planData } from '../constants/planData';
-import type { BottomSheetViewModel, OverlayViewModel, TrainingLabelItem } from '../types/ui';
-
-type TrainingType = keyof typeof typeColorClassByTraining;
-
-type CalendarItem = {
-  dateKey: string;
-  month: number;
-  dayOfMonth: number;
-  dayLabel: string;
-  type: TrainingType;
-  label: string;
-  rowSummary: string;
-};
-
-type WeeklyPreviewWeek = {
-  weekNumber: number;
-  items: CalendarItem[];
-};
+import type {
+  BottomSheetViewModel,
+  CalendarItem,
+  OverlayViewModel,
+  TrainingKind,
+  TrainingLabelItem,
+  WeeklyCalendarGroup,
+} from '../types/ui';
 
 const trainingLabelItems: TrainingLabelItem[] = [
   { label: 'Easy', colorClass: 'bg-emerald-500' },
@@ -28,9 +18,11 @@ const trainingLabelItems: TrainingLabelItem[] = [
   { label: 'Tempo', colorClass: 'bg-amber-500' },
   { label: 'Interval', colorClass: 'bg-violet-500' },
   { label: 'Rest', colorClass: 'bg-slate-500' },
+  { label: 'Strength', colorClass: 'bg-rose-500' },
+  { label: 'Race', colorClass: 'bg-cyan-400' },
 ];
 
-const typeColorClassByTraining = {
+const typeColorClassByTraining: Record<TrainingKind, string> = {
   rest: 'bg-slate-500',
   easy: 'bg-emerald-500',
   long: 'bg-sky-500',
@@ -38,9 +30,9 @@ const typeColorClassByTraining = {
   interval: 'bg-violet-500',
   strength: 'bg-rose-500',
   race: 'bg-cyan-400',
-} as const;
+};
 
-const calendarDays = ['일', '월', '화', '수', '목', '금', '토'];
+const calendarDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const calendarItems: CalendarItem[] = Object.entries(planData).map(([dateKey, value]) => {
   const date = new Date(`${dateKey}T00:00:00`);
@@ -59,7 +51,7 @@ const calendarItems: CalendarItem[] = Object.entries(planData).map(([dateKey, va
   };
 });
 
-const weeklyPreviewWeeks: WeeklyPreviewWeek[] = Array.from({ length: 5 }, (_, index) => {
+const weeklyPreviewWeeks: WeeklyCalendarGroup[] = Array.from({ length: 5 }, (_, index) => {
   const weekNumber = index + 1;
 
   return {
@@ -71,8 +63,9 @@ const weeklyPreviewWeeks: WeeklyPreviewWeek[] = Array.from({ length: 5 }, (_, in
 export function PlanPage() {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [overlayMessage, setOverlayMessage] = useState('');
-  const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+  const [calendarView, setCalendarView] = useState<'month' | 'week'>('week');
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const totalWeeks = weeklyPreviewWeeks.length;
 
   const selectedItem = useMemo(() => {
     if (selectedDateKey === null) {
@@ -119,11 +112,11 @@ export function PlanPage() {
   };
 
   const handlePrevWeek = () => {
-    setSelectedWeek((prevWeek) => (prevWeek === 1 ? 5 : prevWeek - 1));
+    setSelectedWeek((prevWeek) => (prevWeek === 1 ? totalWeeks : prevWeek - 1));
   };
 
   const handleNextWeek = () => {
-    setSelectedWeek((prevWeek) => (prevWeek === 5 ? 1 : prevWeek + 1));
+    setSelectedWeek((prevWeek) => (prevWeek === totalWeeks ? 1 : prevWeek + 1));
   };
 
   return (

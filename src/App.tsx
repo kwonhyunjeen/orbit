@@ -5,11 +5,12 @@ import { Header } from './components/layout/Header';
 import { HomePage } from './pages/Home';
 import { PlanPage } from './pages/Plan';
 import { SplashPage } from './pages/Splash';
+import type { MainTab } from './types/ui';
 
 function App() {
   const { pathname } = useLocation();
 
-  const activeTab: 'home' | 'plan' = pathname.startsWith('/plan') ? 'plan' : 'home';
+  const activeTab: MainTab = pathname.startsWith('/plan') ? 'plan' : 'home';
   const pageTitle = pathname.startsWith('/plan') ? 'Plan' : 'Home';
 
   return (
