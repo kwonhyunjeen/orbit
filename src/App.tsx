@@ -1,22 +1,27 @@
-import { useMemo, useState } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 import { BottomNav } from './components/layout/Bottom';
 import { Header } from './components/layout/Header';
 import { HomePage } from './pages/Home';
 import { PlanPage } from './pages/Plan';
+import { SplashPage } from './pages/Splash';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'plan'>('home');
+  const { pathname } = useLocation();
 
-  const pageTitle = useMemo(() => {
-    return activeTab === 'home' ? 'Home' : 'Plan';
-  }, [activeTab]);
+  const activeTab: 'home' | 'plan' = pathname.startsWith('/plan') ? 'plan' : 'home';
+  const pageTitle = pathname.startsWith('/plan') ? 'Plan' : 'Home';
 
   return (
     <div className="min-h-dvh bg-slate-950 text-slate-100">
       <Header title={pageTitle} />
-      {activeTab === 'home' ? <HomePage /> : <PlanPage />}
-      <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/plan" element={<PlanPage />} />
+        <Route path="/splash" element={<SplashPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <BottomNav activeTab={activeTab} />
     </div>
   );
 }
