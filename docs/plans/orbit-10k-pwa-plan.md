@@ -11,6 +11,8 @@
 - 전역 상태는 Zustand store를 단일 소스로 사용한다.
 - UI, 상태, 3D 렌더링, 날짜 계산 로직을 분리한다.
 - 모바일 환경 중심으로 인터랙션을 검증한다.
+- UI를 먼저 완성하고, 기능 로직은 더미 상태로 연결해 프로토타입을 만든다.
+- UI 뼈대 확정 이후에 shadcn/ui를 도입한다.
 
 ## 3. 구현 단계
 
@@ -32,62 +34,57 @@
    - `pnpm-lock.yaml` 생성 확인
    - 스크립트 실행(`pnpm lint`, `pnpm format`, `pnpm build`) 기준 확인
 
-### Phase 1. 기본 구조 및 데이터 레이어
+### Phase 1. UI/레이아웃 스케치 및 더미 프로토타입
 
-1. `src` 디렉토리 구조를 spec 기준으로 생성
-2. `constants/planData.ts`에 5주 훈련 데이터 정의
-3. `utils`에 날짜 포맷/비교 helper 구성 (`YYYY-MM-DD` 기준)
-4. `store/useOrbitStore.ts` 구현
+1. `src` 디렉토리 구조 정리
+2. 라우팅 셸 구성
+   - `main.tsx` BrowserRouter 적용
+   - `App.tsx` 공통 레이아웃(헤더 + 하단탭 + 본문 슬롯)
+3. 페이지 스캐폴드 구현
+   - `Splash`, `Home`, `Plan` 정적 화면 구성
+4. 핵심 UI 컴포넌트 스케치
+   - Header, BottomNav, OrbitScene(placeholder), BottomSheet, Overlay
+5. 더미 인터랙션 연결
+   - 탭 전환, 캘린더 셀 클릭, 시트 열기/닫기, 오버레이 표시/닫기
+   - 실제 상태 저장/정책 로직 없이 local state 기반으로 동작 확인
+6. 컴포넌트 계약 타입 고정
+   - 뷰모델/props 타입 정의 (`types/ui.ts`)
+
+### Phase 2. shadcn/ui 도입 및 UI 정렬
+
+1. shadcn/ui 설치 및 초기 설정
+2. 기존 스케치 UI를 shadcn/ui 컴포넌트 기반으로 치환
+   - Button, Sheet/Drawer, Dialog, Tabs, Badge 등
+3. 디자인 토큰/간격/타이포 정리
+4. 기존 더미 인터랙션 동작 유지 확인
+
+### Phase 3. 실제 기능 구현 시작 (데이터/상태/유틸)
+
+1. `constants/planData.ts`에 5주 훈련 데이터 정의
+2. `utils`에 날짜 포맷/비교 helper 구성 (`YYYY-MM-DD` 기준)
+3. `store/useOrbitStore.ts` 구현
    - `user`, `records`, `progressCount`
    - `toggleRecord`, `setUserName`, `recalculateProgress`
    - localStorage persist 설정
+4. Phase 1~2 더미 연결을 실제 store + helper 기반으로 치환
 
-### Phase 2. 공통 레이아웃 및 라우팅
+### Phase 4. 핵심 인터랙션 및 정책 연결
 
-1. `App.tsx`에 라우팅/레이아웃 골격 구성
-2. `Splash.tsx`, `Home.tsx`, `Plan.tsx` 라우트 연결
-3. `components/layout/Header.tsx` 구현
-   - 페이지 타이틀 표시
-   - Avatar 클릭 시 이름 변경 모달 연결
-4. `components/layout/BottomNav.tsx` 구현
-   - Home/Plan 탭 이동
-   - 활성 탭 스타일링
-
-### Phase 3. Home 화면 구현
-
-1. `components/3d/OrbitScene.tsx` 구현
-   - Base Track + Progress Track + Bloom
-   - OrbitControls 제한(zoom/pan 비활성, drag 회전만 허용)
-2. 진행률 변화 애니메이션 구현
-   - 완료/취소에 따라 부드러운 증가/감소 전환
-3. `Home.tsx` 구현
-   - 오늘의 훈련 카드
-   - 다가오는 3일 리스트
-   - 상태/데이터 매핑
-
-### Phase 4. Plan 화면 및 BottomSheet 구현
-
-1. `Plan.tsx` 상단 영역 구현
-   - 타이틀, 범례, 달성률
-2. 월간/주간 토글 캘린더 구현
-   - 일요일 시작
+1. Home 진행률 반영 및 3D 애니메이션 연결
+   - 완료/취소에 따른 부드러운 증가/감소 전환
+2. Plan 상태 반영
    - 오늘 하이라이트
    - 과거 미완료 Skip/딤 처리
-3. `components/ui/BottomSheet.tsx` 구현
-   - 날짜/타입/요약/상세/메모 노출
-   - 닫기 버튼 + 스와이프 다운 닫기
-4. 완료 버튼 인터랙션 구현
-   - 오버레이 + 격려 메시지 + Home 동일 3D 애니메이션
-   - 완료/취소 모두 부드러운 증가/감소 전환
-   - 오버레이는 탭/클릭으로 닫기
+   - 월간/주간 뷰 실제 데이터 기준 렌더링
+3. BottomSheet 상세 로직 연결
+   - 날짜별 상세(warmup/main/cooldown, 배지, 메모)
+   - 완료/취소 액션과 오버레이 연동
+4. 정책/예외 처리 반영
+   - 미래 날짜 완료 비활성화 및 안내 문구
+   - 과거 미완료 기록 정책 반영
+   - viewport 핀치줌 방지 설정 반영
 
-### Phase 5. 정책/예외 처리
-
-1. 미래 날짜 완료 비활성화 및 안내 문구 처리
-2. 과거 미완료 기록 정책 반영
-3. viewport 핀치줌 방지 설정 반영
-
-### Phase 6. 검증 및 마감
+### Phase 5. 통합 검증 및 마감
 
 1. 타입체크/린트/포맷/빌드 검증
 2. 주요 플로우 수동 검증
@@ -101,13 +98,16 @@
 ## 4. 파일 단위 작업 우선순위
 
 1. `main.tsx`, `App.tsx`
-2. `store/useOrbitStore.ts`, `constants/planData.ts`, `utils/*`
-3. `components/layout/*`, `components/ui/*`
-4. `components/3d/*`
-5. `pages/Home.tsx`, `pages/Plan.tsx`, `pages/Splash.tsx`
+2. `pages/*`, `components/layout/*`, `components/ui/*`, `components/3d/*` (UI 스케치)
+3. shadcn/ui 적용 대상 파일 정렬
+4. `constants/planData.ts`, `utils/*`, `store/useOrbitStore.ts` (실기능 연결)
 
 ## 5. 리스크와 대응
 
+- UI 스케치와 실기능 연결 시 계약 불일치 가능성
+  - 대응: Phase 1에서 props/type 계약을 먼저 고정하고 Phase 3에서 계약 준수
+- shadcn/ui 도입 시 기존 레이아웃 붕괴 가능성
+  - 대응: Phase 2에서 컴포넌트 단위 치환 + 단계별 화면 확인
 - 3D + 모바일 성능 저하 가능성
   - 대응: 재렌더링 최소화, 불필요한 애니메이션 재생 방지
 - 날짜 경계값 처리 오류 가능성
